@@ -39,16 +39,25 @@
   .special .opt.ningu.sel{border-color:var(--warn);background:#fff7e6}
   .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 4px}
   .switch{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}
-  .conf{display:flex;gap:6px;align-items:center}
-  .conf button{width:34px;padding:6px 0;text-align:center}
-  .conf button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .confwrap{margin:10px 0 4px}
+  .confleg{color:var(--muted);font-size:14px;margin-top:8px;max-width:660px}
+  .combhelp{color:var(--muted);font-size:14px}
+  .vaslabels{display:flex;justify-content:space-between;max-width:660px;font-size:14px;color:var(--muted);font-weight:600;margin:4px 0 4px}
+  .vasbar{display:flex;max-width:720px;height:40px;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;background:#fff}
+  .vasbar .seg{flex:1;border-right:1px solid #eef2f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#374151}
+  .vasbar .seg:last-child{border-right:none}
+  .vasbar .seg:hover{outline:2px solid #86efac;outline-offset:-2px}
+  .vasbar .seg.fill{background:#bbf7d0}
+  .vasbar .seg.sel{background:#16a34a;color:#fff;font-weight:700}
+  .vaslabels{max-width:720px}
   textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:10px;font-family:inherit;font-size:14px;min-height:52px}
   footer{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center}
   footer .status{color:var(--muted);font-size:13px;min-width:180px;text-align:center}
   .hidden{display:none}
   .badge{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--muted)}
-  .badge.done{background:#0f2b1a;border-color:var(--accent2);color:#7ee2a8}
-  .badge.mu{background:#101d33;border-color:var(--accent);color:#9cc3ff}
+  .badge.done{background:#dcfce7;border-color:var(--accent2);color:#166534}
+  .badge.mu{background:#dbeafe;border-color:var(--accent);color:#1e40af}
+  .badge{font-size:13px}
   .help{color:var(--muted);font-size:13px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
   kbd{background:#f3f4f6;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:13px}
   .help{font-size:16px}
@@ -76,6 +85,13 @@
   <button id="btnSync">Sincronizar todo</button>
   <span id="cloudMsg" style="color:#0a7d3a"></span>
 </div>
+<div style="background:#f6fff8;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px">
+  <span>👤 <b>Codificador:</b></span>
+  <input id="coder" placeholder="Escribe tu nombre" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;min-width:220px">
+  <button id="btnCoder">Guardar nombre</button>
+  <span id="coderMsg" style="color:#0a7d3a"></span>
+  <span style="color:var(--muted)">— identifica quién codifica (útil si comparten el link).</span>
+</div>
 
 <div class="wrap">
   <div class="help">
@@ -84,7 +100,7 @@
     Si el texto describe genuinamente <b>dos o más</b> procesos, activa <b>“Combinar varios”</b> y marca los que apliquen.
     Todo se guarda solo en tu navegador; <b>exporta el CSV al terminar</b> (y de vez en cuando como respaldo).
     Metodología: se recomienda codificar al menos la <b>muestra del 15%</b> (43 posts) para calcular acuerdo con los modelos (Krippendorff α); puedes codificar más si quieres.
-    Atajos: <kbd>←</kbd>/<kbd>→</kbd> navegar, <kbd>N</kbd> Ninguno, <kbd>I</kbd> Indeterminado, <kbd>C</kbd> combinar, <kbd>1-9</kbd> confianza.
+    La <b>confianza</b> se marca haciendo clic en la barra verde (0–100). Atajos: <kbd>←</kbd>/<kbd>→</kbd> navegar, <kbd>N</kbd> Ninguno, <kbd>I</kbd> Indeterminado, <kbd>C</kbd> combinar.
   </div>
 
   <div class="card" id="postCard">
@@ -108,11 +124,13 @@
 
     <div class="toolbar">
       <label class="switch"><input type="checkbox" id="combinar"> Combinar varios (co-ocurrencia)</label>
-      <span class="grow"></span>
-      <span class="switch">Confianza:</span>
-      <div class="conf" id="conf">
-        <button data-c="1">1</button><button data-c="2">2</button><button data-c="3">3</button><button data-c="4">4</button><button data-c="5">5</button>
-      </div>
+      <span class="combhelp">Actívalo solo si el texto describe <b>2 o más</b> procesos a la vez (p. ej. resolver un problema <b>y</b> usar una herramienta); marca todos los que apliquen.</span>
+    </div>
+    <div class="confwrap">
+      <div class="switch">Confianza: <b id="confVal" style="color:var(--accent2)">—</b> <span id="confWord" style="color:var(--muted)"></span></div>
+      <div class="vaslabels"><span>Nada</span><span>Poco</span><span>Bastante</span><span>Mucho</span></div>
+      <div class="vasbar" id="conf" title="Haz clic para elegir tu nivel de seguridad (0–100)"></div>
+      <div class="confleg"><b>Qué es:</b> cuánta seguridad tienes de que el proceso elegido es el correcto. Escala de 0 a 100 (de 5 en 5): <b>0 = ninguna seguridad</b>, <b>100 = seguridad total</b>. Haz clic en la barra.</div>
     </div>
     <textarea id="notas" placeholder="Notas (opcional): evidencia literal, dudas…"></textarea>
   </div>
@@ -176,6 +194,10 @@ function buildOpts(){
 }
 
 function currentPost(){ return DATA.posts[idx]; }
+function palabraConf(c){ if(c===null||c===undefined||c==="")return ""; c=+c; if(c<=25)return "· nada"; if(c<=50)return "· poco"; if(c<=75)return "· bastante"; return "· mucho"; }
+function buildConf(){ const w=document.getElementById("conf"); w.innerHTML="";
+  for(let v=0;v<=100;v+=5){ const d=document.createElement("div"); d.className="seg"; d.dataset.c=v; d.title=v; d.textContent=v;
+    d.addEventListener("click",()=>{ rec(currentPost().id).conf=v; render(); }); w.appendChild(d); } }
 
 function render(){
   const p=currentPost(); const r=rec(p.id);
@@ -191,7 +213,10 @@ function render(){
   document.querySelectorAll("#opts .opt").forEach(o=>o.classList.toggle("sel", r.procesos.includes(o.dataset.val)));
   document.querySelectorAll(".special .opt").forEach(o=>o.classList.toggle("sel", r.tipo==="ninguno"&&o.dataset.val==="ninguno" || r.tipo==="indeterminado"&&o.dataset.val==="indeterminado"));
   // confianza
-  document.querySelectorAll("#conf button").forEach(b=>b.classList.toggle("on", String(r.conf)===b.dataset.c));
+  const cv=(r.conf===null||r.conf===undefined||r.conf==="")?null:+r.conf;
+  document.querySelectorAll("#conf .seg").forEach(s=>{ const v=+s.dataset.c; s.classList.toggle("fill", cv!==null && v<=cv); s.classList.toggle("sel", cv!==null && v===cv); });
+  document.getElementById("confVal").textContent = cv===null?"—":cv;
+  document.getElementById("confWord").textContent = palabraConf(cv);
   document.getElementById("notas").value=r.notas||"";
   // status
   const vis=visibleList(); const pos=vis.findIndex(x=>x.id===p.id);
@@ -233,7 +258,6 @@ document.getElementById("combinar").addEventListener("change",e=>{
   else { if(r.procesos.length>1){ r.procesos=[r.procesos[0]]; } if(r.procesos.length===1) r.tipo="unico"; }
   render();
 });
-document.querySelectorAll("#conf button").forEach(b=> b.addEventListener("click",()=>{ rec(currentPost().id).conf=+b.dataset.c; render(); }));
 document.getElementById("notas").addEventListener("input",e=>{ rec(currentPost().id).notas=e.target.value; save(); });
 
 function go(delta){
@@ -260,16 +284,15 @@ document.addEventListener("keydown",e=>{
   else if(e.key.toLowerCase()==="n")special("ninguno");
   else if(e.key.toLowerCase()==="i")special("indeterminado");
   else if(e.key.toLowerCase()==="c"){ const c=document.getElementById("combinar"); c.checked=!c.checked; c.dispatchEvent(new Event("change")); }
-  else if(/^[1-9]$/.test(e.key)){ rec(currentPost().id).conf=+e.key; render(); }
 });
 
 // Exportar / importar CSV
 function csvEscape(s){ s=(s==null?"":String(s)); return '"'+s.replace(/"/g,'""')+'"'; }
 document.getElementById("btnExport").onclick=()=>{
-  const rows=[["n","id","url","proceso","tipo","confianza","notas"]];
+  const rows=[["codificador","n","id","url","proceso","tipo","confianza","notas"]];
   DATA.posts.forEach(p=>{ const r=state[p.id]; if(!r||!r.tipo)return;
     const proc = (r.tipo==="ninguno"||r.tipo==="indeterminado")? r.tipo : r.procesos.join("+");
-    rows.push([p.n,p.id,p.url,proc,r.tipo,r.conf||"",r.notas||""]);
+    rows.push([CODER,p.n,p.id,p.url,proc,r.tipo,r.conf||"",r.notas||""]);
   });
   const csv=rows.map(r=>r.map(csvEscape).join(",")).join("\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
@@ -303,11 +326,22 @@ function parseCsvLine(line){ const out=[]; let cur="",q=false;
 // ---- Guardado en la nube (Google Sheet vía Apps Script) ----
 const EPKEY="verif_endpoint_url";
 let ENDPOINT=localStorage.getItem(EPKEY)||"";
+// ---- Codificador (nombre de quien codifica) ----
+const CKEY="verif_codificador";
+let CODER=localStorage.getItem(CKEY)||"";
+(function initCoder(){
+  const inp=document.getElementById("coder"); inp.value=CODER;
+  function setC(){ CODER=inp.value.trim(); localStorage.setItem(CKEY,CODER); document.getElementById("coderMsg").textContent=CODER?("✓ "+CODER):""; }
+  document.getElementById("btnCoder").onclick=setC;
+  inp.addEventListener("change",setC);
+  if(!CODER){ setTimeout(()=>{ const n=prompt("¿Quién codifica? Escribe tu nombre (se guardará junto a cada codificación):",""); if(n){ inp.value=n; setC(); } },300); }
+  else { document.getElementById("coderMsg").textContent="✓ "+CODER; }
+})();
 let dirty=new Set();
 document.getElementById("endpoint").value=ENDPOINT;
 function cloud(msg){ document.getElementById("cloudMsg").textContent=msg||""; if(msg) setTimeout(()=>{if(document.getElementById("cloudMsg").textContent===msg)document.getElementById("cloudMsg").textContent="";},2500); }
 function rowFor(p){ const r=rec(p.id); const proc=(r.tipo==="ninguno"||r.tipo==="indeterminado")?r.tipo:r.procesos.join("+");
-  return {n:p.n,id:p.id,url:p.url,proceso:proc,tipo:r.tipo||"",confianza:r.conf||"",notas:r.notas||""}; }
+  return {codificador:CODER,n:p.n,id:p.id,url:p.url,proceso:proc,tipo:r.tipo||"",confianza:r.conf||"",notas:r.notas||""}; }
 function pushRow(id){ if(!ENDPOINT)return; const p=DATA.posts.find(x=>x.id===id); if(!p)return; const r=rec(id); if(!r.tipo)return;
   const sep=ENDPOINT.indexOf('?')>=0?'&':'?';
   const img=new Image();
@@ -319,8 +353,9 @@ setInterval(()=>{ if(!ENDPOINT||!dirty.size)return; const ids=[...dirty]; ids.fo
 function pullAll(){ if(!ENDPOINT){cloud("primero conecta la URL");return;} cloud("cargando…");
   const cbName="__vh_cb_"+Date.now();
   const s=document.createElement("script");
-  window[cbName]=(j)=>{ try{ const rows=(j&&j.rows)||[]; const hdr=rows[0]||[]; const gi=n=>hdr.indexOf(n);
+  window[cbName]=(j)=>{ try{ const rows=(j&&j.rows)||[]; const hdr=rows[0]||[]; const gi=n=>hdr.indexOf(n); const gc=gi("codificador");
       let imp=0; for(let i=1;i<rows.length;i++){ const c=rows[i]; const id=String(c[gi("id")]); if(!id||id.indexOf("__PRUEBA")===0)continue;
+        if(CODER && gc>=0 && String(c[gc]||"")!==CODER) continue; // solo mis codificaciones
         const tipo=String(c[gi("tipo")]||""); const proc=String(c[gi("proceso")]||"");
         const procesos=(tipo==="ninguno"||tipo==="indeterminado")?[]:proc.split("+").filter(Boolean);
         state[id]={procesos,tipo:tipo||null,conf:c[gi("confianza")]||null,notas:c[gi("notas")]||""}; imp++; }
@@ -335,7 +370,7 @@ document.getElementById("btnSync").onclick=()=>{ if(!ENDPOINT){cloud("conecta la
 // tras cualquier cambio del post actual, marca para subir a la nube
 ["click","change","input"].forEach(ev=>document.getElementById("postCard").addEventListener(ev,()=>{ const id=currentPost().id; if(rec(id).tipo) markDirty(id); },true));
 
-buildOpts(); refreshCounts(); render();
+buildOpts(); buildConf(); refreshCounts(); render();
 if(ENDPOINT) pullAll();
 </script>
 </body>
